@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "head/proc.h"
 #include "head/cpu.h"
 #include "head/procqueue.h"

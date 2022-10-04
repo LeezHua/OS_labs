@@ -59,7 +59,7 @@ int main(){
   set_proc(procs[2], 7, 4, 5, 0);
   set_proc(procs[3], 3, 3, 7, 0);
   set_proc(procs[4], 5, 5, 8, 0);
-  set_proc(procs[5], 2, 7, 9, 0);
+  set_proc(procs[5], 4, 7, 9, 0);
 
   proc_queue ready = build_queue();
   for(int i = 0; i < proc_nums; ++i){
