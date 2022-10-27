@@ -27,6 +27,21 @@ int run_proc(pcb p, int* runtime){
   }
 }
 
+int run_job(pcb p, int* runtime){
+  if(p->server <= 0){
+    printf("error\n");
+    return 0;
+  }
+
+  printf("job %d: running\n", p->pid);
+  loading(p->server);
+  *runtime  = p->server;
+  p->server = 0;
+  p->wait   = 0;
+  printf("job %d: complete\n", p->pid);
+  return 0;
+}
+
 void loading(int seconds){
   while(seconds--){
     printf(".\n");

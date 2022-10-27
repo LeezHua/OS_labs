@@ -33,7 +33,7 @@ void FCFS(proc_queue ready){
     }
 
     qnode_ptr node = ready->next;
-    int nok = run_job(node->p, &runtime);
+    int nok = run_proc(node->p, &runtime);
     qnode_ptr tmp = node;
     delete_qnode(node);
     if(nok)
