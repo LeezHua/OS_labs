@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <string.h>
 #include "../system/parm.h"
 #include "../system/user.h"
 #include "../system/fs.h"
@@ -7,7 +6,7 @@
 
 int main(int argc, char* argv[]) {
   if(argc < 2) {
-    printf("Usage: delete <filename>\n");
+    printf("Usage: open <filename>\n");
     return 0;
   }
 
@@ -15,22 +14,27 @@ int main(int argc, char* argv[]) {
   binit();
 
   file f;
-  char* path = argv[1];
   char name[FNAMESIZE] = {0};
+  char* path = argv[1];
   
   nameparent(path, &f, name);
-  
+
   if(!f) {
-    printf("File or dir not found: %s\n", path);
+    printf("Open failed: %s\n", path);
   }
   else {
-    if(fdel(f) != 0) {
-      printf("Delete succeed: %s\n", path);
+    if(f->type == T_DIR) {
+      printf("Not a file: %s\n", path);
+    }
+    else if(f->nlink) {
+      printf("Has opened: %s\n", path);
     }
     else {
-      printf("Delete failed: %s\n", path);
+      ++f->nlink;
+      printf("Open succeed: %s\n", path);
     }
   }
+
   bsave();
 
   return 0;

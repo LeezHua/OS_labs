@@ -1,24 +1,23 @@
 cc = gcc
-S  = filesystem
-U  = user
 
-object = $S/disk.o $S/file.o $S/fs.o
-user = $U/ls $U/mkdir $U/rm $U/touch
+C = cmd
+S = system
+
+object = $S/fs.o $S/user.o
+cmd    = $C/close $C/create $C/delete $C/dir \
+				 $C/open $C/read $C/write
 
 $(object): %.o : %.c
 	$(cc) -c $< -o $@
 
-$(user): % : %.c
-	$(cc) -o $@ $<
+$(cmd): % : %.c $(object)
+	$(cc) -o $@ $< $(object)
 
 mkfs: mkfs.c $(object)
-	$(cc) -o mkfs mkfs.c $(object)
+	$(cc) -o mkfs mkfs.c $S/user.o
 
-main: main.o $S/main.h $(object) $(user)
-	$(cc) -o main main.o $(object)
+main: main.c $(cmd) $(object) 
+	$(cc) -o main main.c $(object)
 
-main.o: main.c $S/types.h $S/stat.h $S/fs.h $S/file.h $S/defs.h
-	$(cc) -c main.c
-
-clean:
-	-rm -f main mkfs */*.o *.o $(user)
+clean: 
+	-rm -rf main main.o mkfs $(object) $(cmd)

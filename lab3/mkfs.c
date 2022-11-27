@@ -1,19 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "filesystem/types.h"
-#include "filesystem/stat.h"
-#include "filesystem/fs.h"
-#include "filesystem/file.h"
-#include "filesystem/defs.h"
+#include "system/parm.h"
+#include "system/user.h"
+#include "system/fs.h"
+#include "system/defs.h"
 
-#define DEBUG
+char path[] = "./disk/block";
+block b;
 
-char* path = "./disk/block";
-char block[BSIZE];
-
-void itos(int num, char* str) {
-  int p = 1000;
+static void
+itos(int num, char* str) {
+  int p = 10;
   char ch;
   while(p) {
     ch = '0' + num/p;
@@ -21,106 +19,106 @@ void itos(int num, char* str) {
     p /= 10;
     strncat(str, &ch, 1);
   }
-  str[16] = 0;
+  str[14] = 0;
 }
 
 // create a disk with 1M storage capacity
-void createdisk() {
-  
+static void
+createdisk() {
   FILE* fp;
   char filename[32] = {0};
-  for(int i = 0; i < FSSIZE; ++i) {
+  for(int i = 0; i < NBLOCKS; ++i) {
     strncat(filename, path, 13);
     // printf("%s\n", filename);
     itos(i, filename);
     // printf("%s\n", filename);
     fp = fopen(filename, "w");
-    fwrite(block, BSIZE, 1, fp);
+    fwrite(b, BSIZE, 1, fp);
     fclose(fp);
     filename[0] = 0;
   }
 }
 
-// initialize meta block
-// set bit 0 to 47 in bitmap block
-// represents those blocks are used
-void initmeta() {
-  char* bp = (char*)malloc(BSIZE);
+// create 2 user
+static void
+createuser() {
+  char* users[] = {
+    "wang",
+    "zhang"
+  };
+  char* passwds[] = {
+    "wang123",
+    "zhang123"
+  };
 
-  dread(bp, BMAPSTART);
-  
-  for(int i = 0; i < 6; ++i)
-    bp[i] = 0xff;
-  
-  dwrite(bp, BMAPSTART);
-  free(bp);
+  ucreate(users[0], passwds[0]);
+  ucreate(users[1], passwds[1]);
+
+  uwritedisk();
 }
 
-// create root directory
-void createroot() {
-  struct dinode root, *r;
-  struct dirent ent, *e;
-  uint bno;
-  char* bp = (char*)malloc(BSIZE);
+static void
+createrootdir() {
+  block b = {0};
+  FILE* fp = fopen("./disk/block01", "w");
 
-  memset(&root, 0, sizeof(root));
+  // create wang's root dir
+  file f = ((file)b);
+  f->uid  = 1;
+  f->type = T_DIR;
+  strncpy(f->name, "/", 2);
+  f->readable = 'r';
+  f->writable = 'w';
+  f->addr = 3;
 
-  root.type = T_DIR;
-  root.nlink = 1;     // for '..'
-  root.size  = 32;    // for '.' and '..' dirents
-  root.addrs[0] = bno = balloc();
+  // create zhang's root dir
+  ++f;
+  f->uid   = 2;
+  f->type  = T_DIR;
+  strncpy(f->name, "/", 2);
+  f->readable = 'r';
+  f->writable = 'w';
+  f->addr = 4;
 
-  // append root dinode
-  memset(bp, 0, BSIZE);
-  r = (dinode)bp + 1;
-  memcpy(r, &root, sizeof(root));
-  dwrite(bp, INODESTART);
-
-  // create dirents
-  memset(bp, 0, BSIZE);
-  e = (dirent)bp;
-
-  memset(&ent, 0, sizeof(ent));
-  ent.inum = 1;
-  memcpy(ent.name, ".", 1);
-  memcpy(&e[0], &ent, sizeof(ent));
-
-  memset(&ent, 0, sizeof(ent));
-  ent.inum = 1;
-  memcpy(ent.name, "..", 2);
-  memcpy(&e[1], &ent, sizeof(ent));
+  fwrite(b, BSIZE, 1, fp);
+  fclose(fp);
   
-  dwrite(bp, bno);
+  fp = fopen("./disk/block02", "w");
+  memset(b, 0, BSIZE);
+  b[0] = b[1] = b[2] = b[3] = b[4] = 1;
+  fwrite(b, BSIZE, 1,fp);
+  fclose(fp);
+}
 
-  free(bp);
+void
+createfile() {
+  FILE* fp = fopen("disk/block03", "w");
+  struct file f = {0};
+  f.readable = 'r';
+  f.writable = 'w';
+  strncpy(f.name, "test", 5);
+  f.type = T_FILE;
+  block b = {0};
+  file ffp = (file)b;
+  memcpy(ffp, &f, sizeof(f));
+  fwrite(b, BSIZE, 1, fp);
+  fclose(fp);
 }
 
 int main() {
-  
   createdisk();
-  initmeta();
-  createroot();
+  createuser();
+  createrootdir();
+  // createfile();
 
-  #ifdef DEBUG
-
-  unsigned char* bp = (char*)malloc(BSIZE);
-  dirent e;
-  dinode i;
-  uint bno, size;
-
-  dread(bp, INODESTART);
-  i = (dinode)bp;
-  printf("%d, %d, %d\n", i[1].type, i[1].nlink, size = i[1].size);
-  bno = i[1].addrs[0];
-  dread(bp, bno);
-  for(int j = 0; j < size; j += sizeof(struct dirent)) {
-    e = (dirent)(bp + j);
-    printf("%d, %s\n", e->inum, e->name);
+  block b = {0};
+  FILE* fp = fopen("disk/block01", "r");
+  fread(b, BSIZE, 1, fp);
+  file f = (file)b;
+  for(int i = 0; i < FPB; ++i, ++f) {
+    printf("%d, %s\n", f->uid, f->name);
   }
-
-  free(bp);
-
-  #endif
+  fclose(fp);
 
   return 0;
 }

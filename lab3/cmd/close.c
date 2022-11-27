@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <string.h>
 #include "../system/parm.h"
 #include "../system/user.h"
 #include "../system/fs.h"
@@ -7,7 +6,7 @@
 
 int main(int argc, char* argv[]) {
   if(argc < 2) {
-    printf("Usage: read <filename>\n");
+    printf("Usage: open <filename>\n");
     return 0;
   }
 
@@ -15,13 +14,13 @@ int main(int argc, char* argv[]) {
   binit();
 
   file f;
-  char* path = argv[1];
   char name[FNAMESIZE] = {0};
-
+  char* path = argv[1];
+  
   nameparent(path, &f, name);
 
   if(!f) {
-    printf("File not found: %s\n", path);
+    printf("Close failed: %s\n", path);
   }
   else {
     if(f->type == T_DIR) {
@@ -30,15 +29,13 @@ int main(int argc, char* argv[]) {
     else if(f->nlink == 0) {
       printf("Not opened: %s\n", path);
     }
-    else if(f->writable != 'w') {
-      printf("Not writable: %s\n", path);
-    }
     else {
-      char* src = (char*)baddr(f->addr);
-      for(int i = 0; i < f->size; ++i)
-        putchar(src[i]);
-      putchar('\n');
+      --f->nlink;
+      printf("Close succeed: %s\n", path);
     }
   }
+
+  bsave();
+
   return 0;
 }
