@@ -18,3 +18,11 @@ inode dirlookup(inode dp, char* name, uint* poff);
 int   dirlink(inode dp, char* name, uint inum);
 inode namei(char* path);
 inode nameiparent(char* path, char* name);
+
+//file.c
+int filealloc(void);
+file filedup(file f);
+void fileclose(file f);
+int filestat(file f, stat st);
+int fileread(file f, void* addr, int n);
+int filewrite(file f, void* addr, int n);

@@ -9,18 +9,19 @@
 struct file ftable[NFILE];
 
 // allocate a file structure
-file
+// return a file descriptor
+int
 filealloc(void) {
-  file f;
+  int i;
 
-  for(f = ftable; f < ftable + NFILE; ++f) {
-    if(f->ref == 0) {
-      f->ref = 1;
-      return f;
+  for(i = 0; i < NFILE; ++i) {
+    if(ftable[i].ref == 0) {
+      ftable[i].ref = 1;
+      return i;
     }
   }
 
-  return 0;
+  return -1;
 }
 
 // increment ref count for file f

@@ -35,6 +35,7 @@ printfile(stat st) {
 // }
 
 int main(int argc, char* argv[]) {
+  sysopen("", 1);
   // if(argc < 2) {
   //   ls(".");
   //   exit(0);
